@@ -1,18 +1,36 @@
 const express = require("express");
-const db = require("./db.js");
+const bodyParser = require("body-parser");
+const mysql = require("mysql2");
+const cors = require("cors");
+require("dotenv").config();
 
 const app = express();
-
-app.use(express.json());
+app.use(cors());
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
 const PORT = process.env.PORT || 3000;
+const db = mysql.createConnection({
+	host: process.env.DB_HOST,
+	user: process.env.DB_USER,
+	password: process.env.DB_PASSWORD,
+	database: process.env.DB_NAME,
+});
+
+db.connect((err) => {
+	if (err) {
+		console.error("Error connecting to database:", err);
+		return;
+	}
+	console.log("Connected to database");
+});
+
 app.listen(PORT, () => {
 	console.log(`Server is running on port ${PORT}`);
 });
 
-// Get all items
 app.get("/items", (req, res) => {
-	db.query("SELECT * FROM Items", (err, results) => {
+	db.query("SELECT * FROM items", (err, results) => {
 		if (err) {
 			console.error(err);
 			return res.status(500).json({ message: "Internal server error" });
@@ -21,217 +39,70 @@ app.get("/items", (req, res) => {
 	});
 });
 
-// Create a new item
-app.post("/items", (req, res) => {
-	const { name, stock_count } = req.body;
-	if (!name || !stock_count) {
-		return res
-			.status(400)
-			.json({ message: "Name and stock_count are required" });
-	}
+// Add item
+app.post("/add", (req, res) => {
+	const { id, name, count, rate, purchaseOrderId } = req.body;
+	const purchaseOrderValue = count * rate;
+
 	db.query(
-		"INSERT INTO Items (name, stock_count) VALUES (?, ?)",
-		[name, stock_count],
+		"INSERT INTO items (id, name, stock, rate, purchase_order_id, total_purchase_value) VALUES (?, ?, ?, ?, ?, ?)",
+		[id, name, count, rate, purchaseOrderId, purchaseOrderValue],
 		(err, result) => {
 			if (err) {
 				console.error(err);
 				return res.status(500).json({ message: "Internal server error" });
 			}
-			res.json({ message: "Item created successfully", id: result.insertId });
+			res.json({ message: "Item added successfully", id: result.insertId });
 		},
 	);
 });
 
-// Update an item
-app.put("/items/:id", (req, res) => {
-	const { id } = req.params;
-	const { name, stock_count } = req.body;
-	if (!name || !stock_count) {
-		return res
-			.status(400)
-			.json({ message: "Name and stock_count are required" });
-	}
+// Sell item
+app.post("/sell", (req, res) => {
+	const { id, name, count, rate, sellOrderId } = req.body;
+
+	db.query("SELECT stock FROM items WHERE id = ?", [id], (err, result) => {
+		if (err) {
+			console.error(err);
+			return res.status(500).json({ message: "Internal server error" });
+		}
+
+		const currentStock = result[0].stock;
+
+		if (currentStock < count) {
+			return res.status(400).json({ message: "Not enough stock to sell" });
+		}
+
+		const totalSalesValue = count * rate;
+
+		db.query(
+			"UPDATE items SET stock = stock - ?, total_sales_value = total_sales_value + ?, sales_order_id = ? WHERE id = ?",
+			[count, totalSalesValue, sellOrderId, id],
+			(err, result) => {
+				if (err) {
+					console.error(err);
+					return res.status(500).json({ message: "Internal server error" });
+				}
+				res.json({ message: "Item sold successfully", id: result.insertId });
+			},
+		);
+	});
+});
+
+// Update item
+app.put("/update/:id", (req, res) => {
+	const itemId = req.params.id;
+	const { name, count, rate, purchaseOrderId, sellOrderId } = req.body;
+
 	db.query(
-		"UPDATE Items SET name = ?, stock_count = ? WHERE id = ?",
-		[name, stock_count, id],
+		"UPDATE items SET name = ?, stock = ?, rate = ?, purchase_order_id = ?, sell_order_id = ? WHERE id = ?",
+		[name, count, rate, purchaseOrderId, sellOrderId, itemId],
 		(err, result) => {
 			if (err) {
 				console.error(err);
 				return res.status(500).json({ message: "Internal server error" });
-			}
-			if (result.affectedRows === 0) {
-				return res.status(404).json({ message: "Item not found" });
 			}
 			res.json({ message: "Item updated successfully" });
 		},
 	);
-});
-
-// Delete an item
-app.delete("/items/:id", (req, res) => {
-	const { id } = req.params;
-	db.query("DELETE FROM Items WHERE id = ?", [id], (err, result) => {
-		if (err) {
-			console.error(err);
-			return res.status(500).json({ message: "Internal server error" });
-		}
-		if (result.affectedRows === 0) {
-			return res.status(404).json({ message: "Item not found" });
-		}
-		res.json({ message: "Item deleted successfully" });
-	});
-});
-
-// PurchaseOrders endpoints
-
-// Get all purchase orders
-app.get("/purchase-orders", (req, res) => {
-	db.query("SELECT * FROM PurchaseOrders", (err, results) => {
-		if (err) {
-			console.error(err);
-			return res.status(500).json({ message: "Internal server error" });
-		}
-		res.json(results);
-	});
-});
-
-// Create a new purchase order
-app.post("/purchase-orders", (req, res) => {
-	const { item_id, quantity, unit_price } = req.body;
-	if (!item_id || !quantity || !unit_price) {
-		return res
-			.status(400)
-			.json({ message: "Item ID, quantity, and unit_price are required" });
-	}
-	db.query(
-		"INSERT INTO PurchaseOrders (item_id, quantity, unit_price) VALUES (?, ?, ?)",
-		[item_id, quantity, unit_price],
-		(err, result) => {
-			if (err) {
-				console.error(err);
-				return res.status(500).json({ message: "Internal server error" });
-			}
-			res.json({
-				message: "Purchase order created successfully",
-				id: result.insertId,
-			});
-		},
-	);
-});
-
-// Update a purchase order
-app.put("/purchase-orders/:id", (req, res) => {
-	const { id } = req.params;
-	const { item_id, quantity, unit_price } = req.body;
-	if (!item_id || !quantity || !unit_price) {
-		return res
-			.status(400)
-			.json({ message: "Item ID, quantity, and unit_price are required" });
-	}
-	db.query(
-		"UPDATE PurchaseOrders SET item_id = ?, quantity = ?, unit_price = ? WHERE id = ?",
-		[item_id, quantity, unit_price, id],
-		(err, result) => {
-			if (err) {
-				console.error(err);
-				return res.status(500).json({ message: "Internal server error" });
-			}
-			if (result.affectedRows === 0) {
-				return res.status(404).json({ message: "Purchase order not found" });
-			}
-			res.json({ message: "Purchase order updated successfully" });
-		},
-	);
-});
-
-// Delete a purchase order
-app.delete("/purchase-orders/:id", (req, res) => {
-	const { id } = req.params;
-	db.query("DELETE FROM PurchaseOrders WHERE id = ?", [id], (err, result) => {
-		if (err) {
-			console.error(err);
-			return res.status(500).json({ message: "Internal server error" });
-		}
-		if (result.affectedRows === 0) {
-			return res.status(404).json({ message: "Purchase order not found" });
-		}
-		res.json({ message: "Purchase order deleted successfully" });
-	});
-});
-
-// SalesOrders endpoints
-// Implement similar CRUD operations for SalesOrders
-// Get all sales orders
-app.get("/sales-orders", (req, res) => {
-	db.query("SELECT * FROM SalesOrders", (err, results) => {
-		if (err) {
-			console.error(err);
-			return res.status(500).json({ message: "Internal server error" });
-		}
-		res.json(results);
-	});
-});
-
-// Create a new sales order
-app.post("/sales-orders", (req, res) => {
-	const { item_id, quantity, unit_price } = req.body;
-	if (!item_id || !quantity || !unit_price) {
-		return res
-			.status(400)
-			.json({ message: "Item ID, quantity, and unit_price are required" });
-	}
-	db.query(
-		"INSERT INTO SalesOrders (item_id, quantity, unit_price) VALUES (?, ?, ?)",
-		[item_id, quantity, unit_price],
-		(err, result) => {
-			if (err) {
-				console.error(err);
-				return res.status(500).json({ message: "Internal server error" });
-			}
-			res.json({
-				message: "Sales order created successfully",
-				id: result.insertId,
-			});
-		},
-	);
-});
-
-// Update a sales order
-app.put("/sales-orders/:id", (req, res) => {
-	const { id } = req.params;
-	const { item_id, quantity, unit_price } = req.body;
-	if (!item_id || !quantity || !unit_price) {
-		return res
-			.status(400)
-			.json({ message: "Item ID, quantity, and unit_price are required" });
-	}
-	db.query(
-		"UPDATE SalesOrders SET item_id = ?, quantity = ?, unit_price = ? WHERE id = ?",
-		[item_id, quantity, unit_price, id],
-		(err, result) => {
-			if (err) {
-				console.error(err);
-				return res.status(500).json({ message: "Internal server error" });
-			}
-			if (result.affectedRows === 0) {
-				return res.status(404).json({ message: "Sales order not found" });
-			}
-			res.json({ message: "Sales order updated successfully" });
-		},
-	);
-});
-
-// Delete a sales order
-app.delete("/sales-orders/:id", (req, res) => {
-	const { id } = req.params;
-	db.query("DELETE FROM SalesOrders WHERE id = ?", [id], (err, result) => {
-		if (err) {
-			console.error(err);
-			return res.status(500).json({ message: "Internal server error" });
-		}
-		if (result.affectedRows === 0) {
-			return res.status(404).json({ message: "Sales order not found" });
-		}
-		res.json({ message: "Sales order deleted successfully" });
-	});
 });
