@@ -1,5 +1,5 @@
 const express = require("express");
-const db = require("./db");
+const db = require("./db.js");
 
 const app = express();
 
@@ -235,6 +235,3 @@ app.delete("/sales-orders/:id", (req, res) => {
 		res.json({ message: "Sales order deleted successfully" });
 	});
 });
-
-
-
