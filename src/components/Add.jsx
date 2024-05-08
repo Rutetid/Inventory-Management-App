@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
+import "./styles.css";
 
 const AddInventory = () => {
 	const [id, setId] = useState("");
@@ -33,6 +34,10 @@ const AddInventory = () => {
 
 	return (
 		<div>
+			<br /> <br />
+			<br />
+			<br />
+			<br /> <br /> <br />
 			<h2>Add Inventory Item</h2>
 			<form onSubmit={handleSubmit}>
 				<label>
