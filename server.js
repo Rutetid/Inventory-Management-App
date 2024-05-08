@@ -39,7 +39,6 @@ app.get("/items", (req, res) => {
 	});
 });
 
-// Add item
 app.post("/add", (req, res) => {
 	const { id, name, count, rate, purchaseOrderId } = req.body;
 	const purchaseOrderValue = count * rate;
@@ -57,7 +56,6 @@ app.post("/add", (req, res) => {
 	);
 });
 
-// Sell item
 app.post("/sell", (req, res) => {
 	const { id, name, count, rate, sellOrderId } = req.body;
 
@@ -89,7 +87,42 @@ app.post("/sell", (req, res) => {
 	});
 });
 
-// Update item
+app.post("/purchase", (req, res) => {
+	const { id, count, purchaseOrderId } = req.body;
+
+	db.query("SELECT * FROM items WHERE id = ?", [id], (err, result) => {
+		if (err) {
+			console.error(err);
+			return res.status(500).json({ message: "Internal server error" });
+		}
+
+		if (result.length === 0) {
+			return res.status(404).json({ message: "Item not found" });
+		}
+
+		const item = result[0];
+		const newStock = item.stock + parseInt(count, 10); 
+		const totalPurchaseValue = item.rate * parseInt(count, 10); 
+
+		db.query(
+			"UPDATE items SET stock = ?, total_purchase_value = total_purchase_value + ?, purchase_order_id = ? WHERE id = ?",
+			[newStock, totalPurchaseValue, purchaseOrderId, id],
+			(err, result) => {
+				if (err) {
+					console.error(err);
+					return res.status(500).json({ message: "Internal server error" });
+				}
+				res.json({
+					message: "Item purchased successfully",
+					id: result.insertId,
+				});
+			},
+		);
+	});
+});
+
+
+
 app.put("/update/:id", (req, res) => {
 	const itemId = req.params.id;
 	const { name, count, rate, purchaseOrderId, sellOrderId } = req.body;

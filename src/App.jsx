@@ -5,6 +5,7 @@ import AddInventory from "./components/Add";
 import SellInventory from "./components/Sell";
 import UpdateInventory from "./components/Update";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import PurchaseInventory from "./components/Purchase";
 
 const router = createBrowserRouter([
 	{
@@ -38,11 +39,11 @@ const router = createBrowserRouter([
 	},
 
 	{
-		path: "/update",
+		path: "/purchase",
 		element: (
 			<>
 				<Navbar />
-				<UpdateInventory />
+				<PurchaseInventory />
 			</>
 		),
 	},

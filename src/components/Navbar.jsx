@@ -6,9 +6,8 @@ const Navbar = () => {
 
 
 	return (
-		<nav >
+		<nav>
 			<div className="nav-content">
-				
 				<div className="logo">
 					<Link to="/">InventoryXpert</Link>
 				</div>
@@ -20,10 +19,10 @@ const Navbar = () => {
 						<Link to="/add">Add</Link>
 					</li>
 					<li>
-						<Link to="/sell">Sell</Link>
+						<Link to="/purchase">Purchase</Link>
 					</li>
 					<li>
-						<Link to="/update">Update</Link>
+						<Link to="/sell">Sell</Link>
 					</li>
 				</ul>
 			</div>

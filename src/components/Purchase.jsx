@@ -2,13 +2,12 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "./add.css";
 
-const SellInventory = () => {
+const PurchaseInventory = () => {
 	const [items, setItems] = useState([]);
 	const [selectedItemId, setSelectedItemId] = useState("");
 	const [selectedItemName, setSelectedItemName] = useState("");
 	const [count, setCount] = useState("");
-	const [rate, setRate] = useState("");
-	const [sellOrderId, setSellOrderId] = useState("");
+	const [purchaseOrderId, setPurchaseOrderId] = useState("");
 	const [error, setError] = useState("");
 
 	useEffect(() => {
@@ -28,7 +27,7 @@ const SellInventory = () => {
 		);
 		if (selectedItem) {
 			setSelectedItemId(selectedItem.id);
-			setSelectedItemName(`${selectedItem.id} (${selectedItem.name})`);
+			setSelectedItemName(`${selectedItem.id} - ${selectedItem.name}`);
 		} else {
 			setSelectedItemId("");
 			setSelectedItemName("");
@@ -38,22 +37,20 @@ const SellInventory = () => {
 	const handleSubmit = async (e) => {
 		e.preventDefault();
 		try {
-			await axios.post("http://localhost:3000/sell", {
+			await axios.post("http://localhost:3000/purchase", {
 				id: selectedItemId,
 				name: selectedItemName,
 				count,
-				rate,
-				sellOrderId,
+				purchaseOrderId,
 			});
-			alert("Item sold successfully");
+			alert("Item purchased successfully");
 			setSelectedItemId("");
 			setSelectedItemName("");
 			setCount("");
-			setRate("");
-			setSellOrderId("");
+			setPurchaseOrderId("");
 		} catch (error) {
-			console.error("Error selling item:", error);
-			alert("Failed to sell item");
+			console.error("Error purchasing item:", error);
+			alert("Failed to purchase item");
 		}
 	};
 
@@ -62,7 +59,7 @@ const SellInventory = () => {
 			<div className="form-v10-content">
 				<form className="form-detail" onSubmit={handleSubmit}>
 					<div className="form-right">
-						<h2>Sell Inventory Item</h2>
+						<h2>Purchase Inventory Item</h2>
 						<div className="form-row">
 							<select
 								name="itemId"
@@ -93,28 +90,15 @@ const SellInventory = () => {
 								/>
 							</div>
 						</div>
-						<div className="form-group">
-							<div className="form-row form-row-1">
-								<input
-									type="text"
-									name="code"
-									className="code"
-									placeholder="Rate"
-									value={rate}
-									onChange={(e) => setRate(e.target.value)}
-									required
-								/>
-							</div>
-						</div>
 						<div className="form-row">
 							<input
 								type="text"
 								name="your_email"
 								id="your_email"
 								className="input-text"
-								placeholder="Sell Order ID"
-								value={sellOrderId}
-								onChange={(e) => setSellOrderId(e.target.value)}
+								placeholder="Purchase Order ID"
+								value={purchaseOrderId}
+								onChange={(e) => setPurchaseOrderId(e.target.value)}
 							/>
 						</div>
 						<div className="form-row-last">
@@ -122,7 +106,7 @@ const SellInventory = () => {
 								type="submit"
 								name="register"
 								className="register"
-								value="Sell Item"
+								value="Purchase Item"
 							/>
 						</div>
 					</div>
@@ -132,4 +116,4 @@ const SellInventory = () => {
 	);
 };
 
-export default SellInventory;
+export default PurchaseInventory;
