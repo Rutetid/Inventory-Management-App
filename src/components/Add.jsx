@@ -21,7 +21,6 @@ const AddInventory = () => {
 				purchaseOrderId,
 			});
 			alert("Item added successfully");
-			// Reset form after submission
 			setId("");
 			setName("");
 			setCount("");

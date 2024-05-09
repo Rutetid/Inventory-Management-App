@@ -3,7 +3,6 @@ import Navbar from "./components/Navbar";
 import Inventory from "./components/Inventory";
 import AddInventory from "./components/Add";
 import SellInventory from "./components/Sell";
-import UpdateInventory from "./components/Update";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import PurchaseInventory from "./components/Purchase";
 

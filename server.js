@@ -122,20 +122,3 @@ app.post("/purchase", (req, res) => {
 });
 
 
-
-app.put("/update/:id", (req, res) => {
-	const itemId = req.params.id;
-	const { name, count, rate, purchaseOrderId, sellOrderId } = req.body;
-
-	db.query(
-		"UPDATE items SET name = ?, stock = ?, rate = ?, purchase_order_id = ?, sell_order_id = ? WHERE id = ?",
-		[name, count, rate, purchaseOrderId, sellOrderId, itemId],
-		(err, result) => {
-			if (err) {
-				console.error(err);
-				return res.status(500).json({ message: "Internal server error" });
-			}
-			res.json({ message: "Item updated successfully" });
-		},
-	);
-});
