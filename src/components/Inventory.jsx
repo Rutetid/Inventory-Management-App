@@ -5,7 +5,7 @@ const Inventory = () => {
 	const [items, setItems] = useState([]);
 
 	useEffect(() => {
-		fetch("http://localhost:3000/items")
+		fetch("/items")
 			.then((response) => response.json())
 			.then((data) => setItems(data))
 			.catch((error) => console.error("Error fetching items:", error));
